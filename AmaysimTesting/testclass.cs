@@ -41,7 +41,7 @@ namespace AmaysimTest
             driver.FindElement(By.XPath(".//*[@id='edit_settings_phone_label']")).Click();
             driver.FindElement(By.XPath(".//*[@id='my_amaysim2_setting_phone_label']")).Clear();
             driver.FindElement(By.XPath(".//*[@id='my_amaysim2_setting_phone_label']")).SendKeys("Allen Test");
-            driver.FindElement(By.XPath(".//*[@value='Save']")).Click();
+            driver.FindElement(By.XPath(".//*[@value='Save']")).Submit();
             WaitOnPage(2);
             driver.FindElement(By.XPath("//a[contains(@href,'/my-account/my-amaysim/payment-method') and text()='Prepaid, BPay']")).Click();
             driver.FindElement(By.XPath(".//*[@class='small-4 columns text-right']")).Click();
@@ -58,6 +58,7 @@ namespace AmaysimTest
             IWebElement checkbox = driver.FindElement(By.XPath(".//label[@for='my_amaysim2_setting_caller_id_out']"));
             checkbox.Click();
             ModalClose2();
+            WaitOnPage(1);
             driver.FindElement(By.XPath(".//label[@for='my_amaysim2_setting_caller_waiting']")).Click();
             ModalClose2();
             driver.FindElement(By.XPath(".//label[@for='my_amaysim2_setting_voice_mail']")).Click();
@@ -65,17 +66,9 @@ namespace AmaysimTest
             driver.FindElement(By.XPath(".//label[@for='my_amaysim2_setting_usage_alert']")).Click();
             driver.FindElement(By.XPath("//a[@id='confirm_popup_yes']")).Click();
             ModalClose2();
+            GoToBottomPage();
             driver.FindElement(By.XPath(".//label[@for='my_amaysim2_setting_intl_roaming']")).Click();
-            driver.FindElement(By.XPath("//a[@id='confirm_popup_yes']")).Click();
-            ModalClose2();
-
-
-            var elem = driver.FindElement(By.XPath("//div[contains(text(),'Automatically top up your credit when you run low')]"));
-            Actions actions = new Actions(driver);
-            actions.MoveToElement(elem);
-            actions.Perform();
-            driver.FindElement(By.XPath(".//label[@for='my_amaysim2_setting_intl_roaming']")).Click();
-            WaitOnPage(1);
+            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(30);
             VerifyIntRoaming();
             WaitOnPage(1);
             driver.FindElement(By.XPath(".//*[@id='edit_settings_call_forwarding']")).Click();
@@ -88,17 +81,22 @@ namespace AmaysimTest
             WaitOnPage(1);
             driver.FindElement(By.XPath(".//*[@value='Save']")).Click();
             WaitOnPage(1);
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(10);
+
             VerifyCallForwardError();
             WaitOnPage(1);
             driver.FindElement(By.XPath(".//*[@id='edit_settings_premium_sms_limit']")).Click();
-            driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(20);
             driver.FindElement(By.XPath(".//*[@id='my_amaysim2_setting_psms_spend']")).SendKeys("$20");
             WaitOnPage(1);
             driver.FindElement(By.XPath(".//*[@value='Save']")).Click();
+            WaitOnPage(1);
+            driver.FindElement(By.XPath("//a[contains(@href,'/my-account/my-amaysim/settings')]")).Click();
             driver.Manage().Timeouts().ImplicitWait = TimeSpan.FromSeconds(60);
-            driver.FindElement(By.XPath("//a[@id='edit_settings_auto_recharge']")).Click();
-            driver.FindElement(By.XPath("//span[contains(text(),'No')]")).Click();
+            WaitOnPage(1);
+            ClickAutoCreditTopUp();
+            //driver.FindElement(By.XPath("//a[@id='edit_settings_auto_recharge']")).Click();
+            WaitOnPage(1);
+            ClickAutoCreditTopUpNo();
+            //driver.FindElement(By.XPath("//span[contains(text(),'No')]")).Click();
             WaitOnPage(1);
             driver.FindElement(By.XPath("//span[contains(text(),'Yes')]")).Click();
             driver.FindElement(By.XPath(".//*[@id='my_amaysim2_setting_auto_topup_min_balance']")).SendKeys("$10");
@@ -127,7 +125,7 @@ namespace AmaysimTest
         }
         public void ModalClose()
         {
-        
+
             bool staleElement = true;
             while (staleElement)
             {
@@ -146,7 +144,7 @@ namespace AmaysimTest
 
         public void ModalClose2()
         {
-        
+
             bool staleElement = true;
             while (staleElement)
             {
@@ -168,25 +166,28 @@ namespace AmaysimTest
 
             try
             {
-                WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(10));
-                wait.Until(ExpectedConditions.PresenceOfAllElementsLocatedBy(By.XPath("//p[contains(text(),'Something went wrong, please try again or contact us on Live Chat')]")));
-            try
-                {
-                    ModalClose();
-                }
-            catch (WebDriverException e)
-                {
-                    ModalClose2();
-                }
+
+                driver.FindElements(By.XPath("//h1[@class='ama-hero-heading popup-error white']"));
+                Console.WriteLine("Error on Call Forwarding encountered");
+                ModalClose();
+                driver.FindElement(By.XPath("//a[@id='cancel_settings_call_forwarding']")).Click();
             }
             catch (TimeoutException e)
             {
+                Console.WriteLine("No Error encountred on Call Forwarding");
                 ModalClose2();
             }
+            catch (WebDriverException e)
+            {
+                Console.WriteLine("No Error encountred on Call Forwarding");
+                ModalClose2();
+            }
+
 
         }
         public void VerifyIntRoaming()
         {
+
             try
             {
                 WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(20));
@@ -206,6 +207,32 @@ namespace AmaysimTest
                 ModalClose2();
             }
 
+        }
+
+        public void GoToBottomPage()
+        {
+            var elem = driver.FindElement(By.XPath("//div[contains(text(),'Automatically top up your credit when you run low')]"));
+            Actions actions = new Actions(driver);
+            actions.MoveToElement(elem);
+            actions.Perform();
+        }
+
+        public void ClickAutoCreditTopUpNo()
+        {
+            var nobutton = driver.FindElement(By.XPath("//span[contains(text(),'No')]"));
+            Actions actions = new Actions(driver);
+            actions.MoveToElement(nobutton);
+            actions.Perform();
+            nobutton.Click();
+        }
+
+        public void ClickAutoCreditTopUp()
+        {
+            var editbutton = driver.FindElement(By.XPath("//a[@id='edit_settings_auto_recharge']"));
+            Actions actions = new Actions(driver);
+            actions.MoveToElement(editbutton);
+            actions.Perform();
+            editbutton.Click();
         }
 
 
